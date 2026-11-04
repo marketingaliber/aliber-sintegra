@@ -5,6 +5,13 @@ o SINTEGRA, os XMLs de entrada e saída e um relatório Excel de entradas e saí
 
 Versão atual: **2.3**
 
+## Download
+
+**[Baixar Instalar-AliberSintegra-2.3.exe](https://github.com/marketingaliber/aliber-sintegra/raw/main/versoes/Instalar-AliberSintegra-2.3.exe)**
+
+Na primeira instalação é preciso internet (o instalador baixa o Python oficial do python.org). Versões
+anteriores ficam na pasta `versoes/`.
+
 ## Funcionalidades
 
 - **Botão "Gerar SINTEGRA"**: escolhe o mês, gera o SINTEGRA, o relatório Excel e os zips de XML, confere os
