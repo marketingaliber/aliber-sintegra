@@ -1,0 +1,152 @@
+ALIBER SINTEGRA - versao 2.3
+Gera o SINTEGRA (Convenio ICMS 57/95) direto do banco do PDV+ e envia
+automaticamente para a contabilidade todo mes.
+
+CORRECAO DA 2.3
+- Empresa com endereco sem numero (ex.: rodovia, "SN"): o registro 11
+  saia com numero 00000 e complemento vazio, e o validador rejeitava
+  ("Numero ou complemento deve ser preenchido"). Agora o complemento
+  sai como "SN" (ou o texto original, ex.: "S/N").
+
+NOVIDADES DA 2.2
+- O botao "Gerar SINTEGRA" tambem envia para a contabilidade (pode
+  desligar em Configuracoes > "Enviar a contabilidade ao clicar em
+  Gerar SINTEGRA").
+  - Mes ja encerrado: envia na hora, sem perguntar (pergunta se o mes
+    ja tinha sido enviado ou se a conferencia achou divergencia).
+  - Mes em andamento: pergunta antes e envia como [PARCIAL]. A parcial
+    NAO conta como enviada: no dia 1o o mes completo vai normalmente.
+- Instalador (Instalar-AliberSintegra-2.2.exe): instala sem precisar do
+  Python nem gerar .exe; cria atalhos e desinstalador.
+- O log registra cada verificacao feita ao ligar o computador.
+
+NOVIDADE DA 2.1
+- Botao "Simular envio automatico": testa a rotina do dia 1o sem mexer
+  no relogio do Windows (veja a secao TESTAR O AUTOMATICO).
+
+NOVIDADES DA 2.0
+- Envio por e-mail (Gmail do cliente) para a contabilidade, com copia
+  para o cliente: SINTEGRA .TXT + relatorio Excel completo + XMLs de
+  entrada (.zip) + XMLs de saida (.zip, NFC-e e NF-e autorizadas e
+  canceladas).
+- Rotina automatica: a partir do dia 1o, ao ligar o computador, gera o
+  SINTEGRA do mes anterior, salva na Area de Trabalho e envia.
+- Relatorio Excel com abas Resumo, Entradas, Itens Entradas, Saidas e
+  Itens Saidas.
+
+============================================================
+PARTE 1 - GERAR O PROGRAMA (.exe)  (no seu PC)
+============================================================
+1. Se ainda nao tem: instale o Python pelo python.org, marcando
+   "Add python.exe to PATH" na primeira tela do instalador.
+2. Descompacte esta pasta e de dois cliques em GERAR_EXE.bat.
+3. Espere aparecer "PRONTO!". O arquivo AliberSintegra.exe aparece na
+   pasta. E so ele que vai para o cliente.
+   (Se ja tinha a versao 1.0 ou 2.0 instalada no cliente, e so substituir o
+   .exe antigo pelo novo; as configuracoes ficam guardadas.)
+
+============================================================
+PARTE 2 - PREPARAR O GMAIL DO CLIENTE  (uma vez por cliente)
+============================================================
+O Gmail nao deixa programas usarem a senha normal. E preciso criar uma
+"senha de app" (16 letras):
+1. Entre na conta Google do cliente e ative a "Verificacao em duas
+   etapas" (myaccount.google.com > Seguranca).
+2. Abra myaccount.google.com/apppasswords (o programa tem um atalho
+   para essa pagina nas Configuracoes).
+3. Em "Nome do app" escreva Aliber SINTEGRA e clique em Criar.
+4. Copie a senha de 16 letras que aparece. Ela so e mostrada uma vez.
+
+============================================================
+PARTE 3 - INSTALAR E CONFIGURAR NO CLIENTE
+============================================================
+1. Copie o AliberSintegra.exe para o computador do PDV+ (ex.:
+   C:\PDV+\AliberSintegra.exe) e crie um atalho na Area de Trabalho.
+2. Abra o programa. A tela de Configuracoes abre sozinha:
+   Coluna "Empresa e arquivos":
+   - Telefone de contato (obrigatorio, com DDD).
+   - Nome do contato (opcional).
+   - Banco do PDV+ (ja vem preenchido no lugar padrao).
+   - Pasta para salvar (padrao Documentos\SINTEGRA).
+   - Pasta com XMLs originais de entrada (opcional, ver abaixo).
+   Coluna "E-mail e envio automatico":
+   - E-mail da contabilidade (mais de um: separe com ;).
+   - E-mail do cliente (o Gmail que envia; recebe copia).
+   - Senha de app do Gmail (a de 16 letras da Parte 2).
+   - Marque "Gerar e enviar automaticamente todo mes".
+3. Clique em "Testar e-mail". Deve chegar um e-mail de teste na caixa
+   do cliente.
+4. Clique em Salvar. O programa se registra para rodar quando o
+   Windows iniciar.
+
+O PRIMEIRO envio automatico acontece no PROXIMO dia 1o (ex.: ativando
+em 06/10, o primeiro sera em 01/11, com o mes de outubro). Para enviar
+um mes que ja passou, use o botao "Enviar para a contabilidade".
+
+============================================================
+TESTAR O AUTOMATICO (sem mudar a data do Windows)
+============================================================
+1. Configure e salve as Configuracoes normalmente.
+2. Na tela principal, clique em "Simular envio automatico".
+3. Confira a data (ja vem o proximo dia 1o) e clique em
+   "Iniciar simulacao".
+4. Em cerca de 1 minuto:
+   - aparece TESTE-SINTEGRA-....TXT na Area de Trabalho;
+   - chega um e-mail "[TESTE] SINTEGRA ..." SO no e-mail do cliente,
+     dizendo para quem iria no envio real e se o programa esta
+     registrado para iniciar com o Windows;
+   - aparece o aviso no canto da tela.
+O teste NAO altera o relogio, o PDV+ nem o controle de envios: o envio
+real do dia 1o continua acontecendo normalmente. Os arquivos do teste
+ficam em Documentos\SINTEGRA\TESTE. Pode apagar o TESTE-...TXT da
+Area de Trabalho depois.
+
+Pelo Prompt de Comando (opcional), o mesmo teste:
+   AliberSintegra.exe --automatico --simular 01/11/2026
+
+============================================================
+COMO FUNCIONA O AUTOMATICO
+============================================================
+- A partir do dia 1o, quando o computador for ligado, o programa espera
+  cerca de 1 minuto (para o PDV+ e a internet subirem) e:
+  1) gera o SINTEGRA, o relatorio Excel e os zips de XML do mes anterior;
+  2) copia o SINTEGRA .TXT para a Area de Trabalho;
+  3) envia tudo para a contabilidade.
+- Se nao ligarem o computador no dia 1o, ele faz no primeiro dia em que
+  for ligado. Depois de enviado, nao envia de novo naquele mes.
+- Sem internet: tenta de novo varias vezes por cerca de 2 horas e, se
+  nao conseguir, tenta na proxima vez que o computador ligar.
+- Um aviso aparece no canto da tela: verde (enviado), amarelo (enviado
+  com observacoes, ou gerado sem conseguir enviar) ou vermelho (nao
+  enviado: o arquivo precisa ser conferido, fale com a Aliber).
+- Ele NAO envia sozinho se o SINTEGRA tiver erro ou se a conferencia
+  com o banco do PDV+ der divergencia.
+
+IMPORTANTE: notas de compra lancadas no PDV+ DEPOIS do dia 1o nao vao
+no envio automatico. O programa avisa quais notas do mes estavam sem
+lancamento. Depois de lancar, gere de novo e use "Enviar para a
+contabilidade".
+
+============================================================
+XMLs DE ENTRADA (assinatura digital)
+============================================================
+O PDV+ regrava o XML do fornecedor quando importa a nota. O conteudo
+fiscal confere, mas a assinatura digital desses XMLs deixa de ser
+valida. Se o sistema da contabilidade exigir XML com assinatura valida,
+indique em "Pasta com XMLs originais de entrada" a pasta onde ficam os
+XMLs originais (ex.: a pasta de downloads do FSist ou dos e-mails dos
+fornecedores). O programa procura os arquivos por chave de acesso,
+inclusive em subpastas. Os XMLs de SAIDA saem do banco ja com
+assinatura valida.
+
+============================================================
+O QUE ENTRA NO SINTEGRA
+============================================================
+Registros 10, 11, 50, 53, 54, 61, 61R, 75, 88 e 90. NF-e de entrada
+lancadas no PDV+, NFC-e e NF-e de saida (inclusive canceladas).
+NAO gera: 51 (IPI), 60, 70, 74 (inventario).
+Advertencias normais do validador: "Serie invalida" nos registros 61 e
+"Base de calculo do ICMS" nos 61R.
+
+Arquivos de registro (para suporte), em %APPDATA%\AliberSintegra:
+  erros.log, automatico.log, config.json, estado.json

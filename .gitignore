@@ -1,0 +1,17 @@
+# Arquivos gerados
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+AliberSintegra.exe
+instalador/Instalar-AliberSintegra-*.exe
+
+# Dados de clientes (nunca subir)
+*.db
+*.TXT
+*.xlsx
+*.zip
+config.json
+estado.json
+*.log
