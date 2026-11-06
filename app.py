@@ -4,9 +4,9 @@ from datetime import date
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
-import motor_pdv, envio, automatico
+import motor_pdv, envio, automatico, versoes
 
-VERSAO = '2.3'
+VERSAO = '2.4'
 APP_DIR = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'AliberSintegra')
 CONFIG = os.path.join(APP_DIR, 'config.json')
 
@@ -407,6 +407,8 @@ class App(tk.Tk):
 
         rod = tk.Frame(j, bg=BG); rod.pack(fill='x', padx=24, pady=(10, 20))
         Botao(rod, 'Testar e-mail', testar, cor=CARD2, hover=LINHA).pack(side='left')
+        Botao(rod, '🔒  Escolher versão', lambda: self.pedir_senha_tecnico(j), cor=CARD2, hover=LINHA).pack(
+            side='left', padx=8)
         Botao(rod, 'Salvar', salvar).pack(side='right')
         Botao(rod, 'Cancelar', j.destroy, cor=CARD2, hover=LINHA).pack(side='right', padx=8)
 
@@ -635,6 +637,141 @@ class App(tk.Tk):
         rod = tk.Frame(j, bg=BG); rod.pack(fill='x', padx=26, pady=(14, 20))
         Botao(rod, 'Iniciar simulação', iniciar).pack(side='right')
         Botao(rod, 'Cancelar', j.destroy, cor=CARD2, hover=LINHA).pack(side='right', padx=8)
+
+    # ---------- troca de versao (tecnico) ----------
+    def _janela(self, pai, titulo):
+        j = tk.Toplevel(pai); j.title(titulo); j.configure(bg=BG); j.resizable(False, False)
+        j.transient(pai); j.grab_set()
+        try:
+            j.iconbitmap(recurso('icone.ico'))
+        except Exception:
+            pass
+        return j
+
+    def pedir_senha_tecnico(self, pai):
+        j = self._janela(pai, 'Área do técnico')
+        corpo = tk.Frame(j, bg=BG); corpo.pack(padx=26, pady=(20, 6))
+        self._lbl(corpo, 'Escolher versão', 13, AZUL, 'bold').pack(anchor='w')
+        self._lbl(corpo, 'Área do técnico da Aliber. Digite a senha do técnico.', 9, SUAVE).pack(anchor='w', pady=(2, 10))
+        v = tk.StringVar()
+        en = tk.Entry(corpo, textvariable=v, show='•', width=30, bg=CARD2, fg=TXT, relief='flat', font=(FONTE, 12),
+                      insertbackground=TXT, highlightthickness=1, highlightbackground=LINHA, highlightcolor=AZUL)
+        en.pack(anchor='w', ipady=5); en.focus_set()
+        msg = self._lbl(corpo, '', 9, VERMELHO_HOVER); msg.pack(anchor='w', pady=(6, 0))
+
+        def entrar(*_):
+            try:
+                ok = versoes.conferir_senha(v.get())
+            except versoes.ErroVersao as e:
+                msg.config(text=str(e)); return
+            if not ok:
+                msg.config(text='Senha incorreta.'); v.set(''); return
+            j.destroy()
+            self.abrir_versoes(pai)
+
+        en.bind('<Return>', entrar)
+        rod = tk.Frame(j, bg=BG); rod.pack(fill='x', padx=26, pady=(10, 20))
+        Botao(rod, 'Entrar', entrar).pack(side='right')
+        Botao(rod, 'Cancelar', j.destroy, cor=CARD2, hover=LINHA).pack(side='right', padx=8)
+
+    def abrir_versoes(self, pai):
+        j = self._janela(pai, 'Escolher versão')
+        corpo = tk.Frame(j, bg=BG); corpo.pack(padx=24, pady=(18, 6), fill='both')
+        self._lbl(corpo, 'Escolher versão', 13, AZUL, 'bold').pack(anchor='w')
+        self._lbl(corpo, f'Versão instalada: {VERSAO}', 9, SUAVE).pack(anchor='w', pady=(2, 10))
+        lista = tk.Listbox(corpo, width=62, height=7, bg=CARD2, fg=TXT, relief='flat', font=(FONTE, 10),
+                           selectbackground=AZUL, selectforeground='white', highlightthickness=0, activestyle='none')
+        lista.pack(anchor='w', fill='x')
+        self._lbl(corpo, 'O QUE MUDOU', 8, SUAVE, 'bold').pack(anchor='w', pady=(12, 4))
+        notas = tk.Text(corpo, width=62, height=9, bg=CARD2, fg=TXT, relief='flat', wrap='word', font=(FONTE, 9),
+                        padx=10, pady=8, highlightthickness=0)
+        notas.pack(anchor='w', fill='x'); notas.configure(state='disabled')
+        status = self._lbl(corpo, 'Buscando as versões publicadas…', 9, SUAVE, wraplength=520, justify='left')
+        status.pack(anchor='w', pady=(10, 0))
+        itens, cache_notas = [], {}
+        rod = tk.Frame(j, bg=BG); rod.pack(fill='x', padx=24, pady=(10, 20))
+        bt = Botao(rod, 'Instalar esta versão', lambda: instalar())
+        bt.pack(side='right'); bt.habilitar(False)
+        Botao(rod, 'Fechar', j.destroy, cor=CARD2, hover=LINHA).pack(side='right', padx=8)
+
+        def mostrar_notas(texto):
+            notas.configure(state='normal'); notas.delete('1.0', 'end')
+            notas.insert('end', texto or '(sem notas para esta versão)'); notas.configure(state='disabled')
+
+        def selecionou(*_):
+            sel = lista.curselection()
+            if not sel:
+                return
+            it = itens[sel[0]]
+            bt.habilitar(not it['instalada'])
+            if it['versao'] in cache_notas:
+                mostrar_notas(cache_notas[it['versao']]); return
+            mostrar_notas('Carregando…')
+
+            def t():
+                cache_notas[it['versao']] = versoes.notas(it)
+                self.after(0, lambda: lista.curselection() and itens[lista.curselection()[0]] is it
+                           and mostrar_notas(cache_notas[it['versao']]))
+            threading.Thread(target=t, daemon=True).start()
+
+        lista.bind('<<ListboxSelect>>', selecionou)
+
+        def carregou(res):
+            if isinstance(res, Exception):
+                status.config(text=str(res), fg=VERMELHO_HOVER); return
+            itens[:] = res
+            for it in res:
+                rot = f'  Versão {it["versao"]}   ·   {it["tamanho"] / 1048576:.1f} MB'
+                if it['instalada']:
+                    rot += '   ·   INSTALADA'
+                elif it['mais_antiga']:
+                    rot += '   ·   mais antiga'
+                lista.insert('end', rot)
+            status.config(text=f'{len(res)} versão(ões) publicada(s). Selecione uma para ver o que mudou.' if res
+                          else 'Nenhuma versão publicada encontrada.', fg=SUAVE)
+            if res:
+                lista.selection_set(0); selecionou()
+
+        def buscar():
+            try:
+                r = versoes.listar(VERSAO)
+            except versoes.ErroVersao as e:
+                r = e
+            except Exception as e:
+                registrar_erro(traceback.format_exc()); r = Exception(f'Erro ao buscar versões: {e}')
+            self.after(0, lambda: carregou(r))
+        threading.Thread(target=buscar, daemon=True).start()
+
+        def instalar():
+            sel = lista.curselection()
+            if not sel:
+                return
+            it = itens[sel[0]]
+            aviso = f'Instalar a versão {it["versao"]}?\n\nO Aliber SINTEGRA será fechado, atualizado e aberto de novo. ' \
+                    'As configurações, a senha do Gmail e o histórico de envios são mantidos.'
+            if it['mais_antiga']:
+                aviso = f'A versão {it["versao"]} é MAIS ANTIGA que a instalada ({VERSAO}).\n\n' + aviso
+            if it['sem_seletor']:
+                aviso += f'\n\nATENÇÃO: a versão {it["versao"]} não tem esta tela de troca de versão. Para voltar ' \
+                         'depois, será preciso rodar o instalador da versão nova manualmente.'
+            if not messagebox.askyesno('Escolher versão', aviso, parent=j):
+                return
+            bt.habilitar(False)
+
+            def t():
+                try:
+                    caminho = versoes.baixar(it, lambda p: self.after(0, lambda: status.config(
+                        text=f'Baixando a versão {it["versao"]}… {p}%', fg=AZUL)))
+                    self.after(0, lambda: status.config(text='Instalando… o programa vai fechar e abrir de novo.',
+                                                        fg=AZUL))
+                    versoes.instalar(caminho)
+                    self.after(1500, self.destroy)
+                except versoes.ErroVersao as e:
+                    m = str(e); self.after(0, lambda: (status.config(text=m, fg=VERMELHO_HOVER), bt.habilitar(True)))
+                except Exception as e:
+                    registrar_erro(traceback.format_exc()); m = f'Erro ao instalar: {e}'
+                    self.after(0, lambda: (status.config(text=m, fg=VERMELHO_HOVER), bt.habilitar(True)))
+            threading.Thread(target=t, daemon=True).start()
 
     def abrir_pasta(self):
         if self.ultimo: abrir(self.ultimo['pasta'])

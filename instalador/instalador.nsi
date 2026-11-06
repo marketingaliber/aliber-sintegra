@@ -8,7 +8,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !define APP      "Aliber SINTEGRA"
-!define VERSAO   "2.3"
+!define VERSAO   "2.4"
 !define PYVER    "3.12.10"
 !define PYURL    "https://www.python.org/ftp/python/${PYVER}/python-${PYVER}-amd64.exe"
 !define UNKEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\AliberSintegra"
@@ -19,7 +19,7 @@ InstallDir "$LOCALAPPDATA\AliberSintegra"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 BrandingText "Aliber Informatica"
-VIProductVersion "2.3.0.0"
+VIProductVersion "2.4.0.0"
 VIAddVersionKey "ProductName" "${APP}"
 VIAddVersionKey "CompanyName" "Aliber Informatica"
 VIAddVersionKey "FileDescription" "Instalador do ${APP}"
@@ -59,6 +59,7 @@ Section "Aliber SINTEGRA" SecApp
   File "..\envio.py"
   File "..\relatorio_excel.py"
   File "..\gerar_sintegra.py"
+  File "..\versoes.py"
   File "..\icone.ico"
   File "..\LEIA-ME.txt"
   SetOutPath "$INSTDIR\pacotes"
@@ -70,7 +71,7 @@ Section "Aliber SINTEGRA" SecApp
     nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $$ProgressPreference=\"SilentlyContinue\"; Invoke-WebRequest -UseBasicParsing -Uri \"${PYURL}\" -OutFile \"$TEMP\python-aliber.exe\""'
     Pop $0
     ${IfNot} ${FileExists} "$TEMP\python-aliber.exe"
-      MessageBox MB_ICONSTOP "Não foi possível baixar o Python. Verifique a internet e rode o instalador de novo."
+      MessageBox MB_ICONSTOP "Não foi possível baixar o Python. Verifique a internet e rode o instalador de novo." /SD IDOK
       Abort
     ${EndIf}
     DetailPrint "Instalando o Python (pode levar alguns minutos)..."
@@ -87,7 +88,7 @@ Section "Aliber SINTEGRA" SecApp
     ${EndIf}
     StrCpy $PYW "$1pythonw.exe"
     ${IfNot} ${FileExists} "$PYW"
-      MessageBox MB_ICONSTOP "A instalação do Python não foi concluída. Rode o instalador de novo ou fale com a Aliber Informática."
+      MessageBox MB_ICONSTOP "A instalação do Python não foi concluída. Rode o instalador de novo ou fale com a Aliber Informática." /SD IDOK
       Abort
     ${EndIf}
   ${EndIf}
@@ -98,7 +99,7 @@ Section "Aliber SINTEGRA" SecApp
   nsExec::ExecToLog '"$2\python.exe" -m pip install --no-index --find-links "$INSTDIR\pacotes" --upgrade --disable-pip-version-check openpyxl'
   Pop $0
   ${If} $0 != 0
-    MessageBox MB_ICONSTOP "Falha ao instalar o openpyxl (código $0). Fale com a Aliber Informática."
+    MessageBox MB_ICONSTOP "Falha ao instalar o openpyxl (código $0). Fale com a Aliber Informática." /SD IDOK
     Abort
   ${EndIf}
 
@@ -124,6 +125,11 @@ Section "Aliber SINTEGRA" SecApp
   WriteRegStr HKCU "${UNKEY}" "UninstallString" '"$INSTDIR\Desinstalar.exe"'
   WriteRegDWORD HKCU "${UNKEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNKEY}" "NoRepair" 1
+
+  ; Troca de versao pelo tecnico (instalador rodado com /S): reabre o programa no final.
+  ${If} ${Silent}
+    Exec '"$PYW" "$INSTDIR\app\app.py"'
+  ${EndIf}
 SectionEnd
 
 Section "Uninstall"

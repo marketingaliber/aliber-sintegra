@@ -1,6 +1,13 @@
-ALIBER SINTEGRA - versao 2.3
+ALIBER SINTEGRA - versao 2.4
 Gera o SINTEGRA (Convenio ICMS 57/95) direto do banco do PDV+ e envia
 automaticamente para a contabilidade todo mes.
+
+NOVIDADE DA 2.4
+- Configuracoes > "Escolher versao" (area do tecnico, senha da Aliber):
+  mostra as versoes publicadas e o que mudou em cada uma, e instala a
+  escolhida (inclusive voltar para uma mais antiga). O programa fecha,
+  atualiza e abre sozinho. Configuracoes e historico sao mantidos.
+  Precisa de internet.
 
 CORRECAO DA 2.3
 - Empresa com endereco sem numero (ex.: rodovia, "SN"): o registro 11

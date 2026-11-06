@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 echo ============================================
-echo   Aliber SINTEGRA 2.3 - gerando o programa .exe
+echo   Aliber SINTEGRA 2.4 - gerando o programa .exe
 echo ============================================
 echo.
 py --version >nul 2>&1
@@ -16,7 +16,7 @@ echo [1/2] Instalando o empacotador (PyInstaller) e o gerador de Excel (openpyxl
 py -m pip install --upgrade pyinstaller openpyxl
 echo.
 echo [2/2] Montando o AliberSintegra.exe (leva 1 a 2 minutos)...
-py -m PyInstaller --noconfirm --clean --onefile --windowed --name AliberSintegra --icon icone.ico --add-data "icone.ico;." --hidden-import relatorio_excel --collect-submodules openpyxl app.py
+py -m PyInstaller --noconfirm --clean --onefile --windowed --name AliberSintegra --icon icone.ico --add-data "icone.ico;." --hidden-import relatorio_excel --hidden-import versoes --collect-submodules openpyxl app.py
 if errorlevel 1 (
   echo.
   echo Deu erro ao montar o programa. Tire um print desta tela e mande para o Claude.
