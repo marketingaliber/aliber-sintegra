@@ -3,18 +3,20 @@
 Gera o arquivo SINTEGRA (Convênio ICMS 57/95) direto do banco do PDV+ e envia para a contabilidade
 o SINTEGRA, os XMLs de entrada e saída e um relatório Excel de entradas e saídas.
 
-Versão atual: **2.4**
+Versão atual: **2.5**
 
 ## Download
 
-**[Baixar Instalar-AliberSintegra-2.4.exe](https://github.com/marketingaliber/aliber-sintegra/raw/main/versoes/Instalar-AliberSintegra-2.4.exe)**
+**[Baixar Instalar-AliberSintegra-2.5.exe](https://github.com/marketingaliber/aliber-sintegra/raw/main/versoes/Instalar-AliberSintegra-2.5.exe)**
 
 Na primeira instalação é preciso internet (o instalador baixa o Python oficial do python.org). Versões
 anteriores ficam na pasta `versoes/`.
 
 ## Funcionalidades
 
-- **Botão "Gerar SINTEGRA"**: escolhe o mês, gera o SINTEGRA, o relatório Excel e os zips de XML, confere os
+- **Botão "Gerar e salvar na Área de Trabalho"**: gera tudo e copia para a pasta "SINTEGRA MM-AAAA" na Área de
+  Trabalho, sem enviar e-mail.
+- **Botão "Gerar e enviar à contabilidade"** (ativo com os e-mails configurados): escolhe o mês, gera o SINTEGRA, o relatório Excel e os zips de XML, confere os
   totais com o banco do PDV+ e envia à contabilidade (mês encerrado: envia direto; mês em andamento: pergunta e
   envia como PARCIAL).
 - **Envio automático**: a partir do dia 1º, ao ligar o computador, gera o mês anterior, copia para a Área de
@@ -46,6 +48,7 @@ Instruções de uso completas em `LEIA-ME.txt`.
 
 ## Histórico
 
+- **2.5**: dois botões, "Gerar e enviar à contabilidade" e "Gerar e salvar na Área de Trabalho".
 - **2.4**: Configurações > Escolher versão, com senha do técnico.
 - **2.3**: registro 11 com endereço sem número (ex.: rodovia) saía com número 00000 e complemento vazio e era
   rejeitado pelo validador; agora o complemento sai como "SN".

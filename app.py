@@ -1,12 +1,12 @@
 """Aliber SINTEGRA - gera o arquivo SINTEGRA direto do banco do PDV+."""
-import json, os, queue, subprocess, sys, threading, traceback, webbrowser
+import json, os, queue, shutil, subprocess, sys, threading, traceback, webbrowser
 from datetime import date
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 import motor_pdv, envio, automatico, versoes
 
-VERSAO = '2.4'
+VERSAO = '2.5'
 APP_DIR = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'AliberSintegra')
 CONFIG = os.path.join(APP_DIR, 'config.json')
 
@@ -108,7 +108,7 @@ class App(tk.Tk):
         super().__init__()
         self.title(f'Aliber SINTEGRA {VERSAO}')
         self.configure(bg=BG)
-        self.geometry('780x780'); self.minsize(720, 720)
+        self.geometry('800x880'); self.minsize(760, 820)
         try:
             self.iconbitmap(recurso('icone.ico'))
         except Exception:
@@ -168,12 +168,22 @@ class App(tk.Tk):
         self._lbl(c2, 'FINALIDADE', 8, SUAVE, 'bold').pack(anchor='w')
         self.cb_fin = ttk.Combobox(c2, values=list(FINALIDADES), state='readonly', width=18, font=(FONTE, 11))
         self.cb_fin.current(0); self.cb_fin.pack(anchor='w', pady=(4, 0))
-        self.bt_gerar = Botao(ctl, 'Gerar SINTEGRA', self.gerar, grande=True)
-        self.bt_gerar.pack(side='right', anchor='s')
+        bts = tk.Frame(self, bg=BG); bts.pack(fill='x', padx=28, pady=(0, 16))
+        bts.columnconfigure(0, weight=1, uniform='b'); bts.columnconfigure(1, weight=1, uniform='b')
+        self.bt_gerar_enviar = Botao(bts, '✉  Gerar e enviar à contabilidade', lambda: self.gerar('enviar'),
+                                     grande=True)
+        self.bt_gerar_enviar.grid(row=0, column=0, sticky='ew', padx=(0, 6))
+        self.bt_gerar_salvar = Botao(bts, '🖥  Gerar e salvar na Área de Trabalho', lambda: self.gerar('salvar'),
+                                     cor=AZUL, hover='#5C9DFF', grande=True)
+        self.bt_gerar_salvar.grid(row=0, column=1, sticky='ew', padx=(6, 0))
+        for b in (self.bt_gerar_enviar, self.bt_gerar_salvar):
+            b.config(font=(FONTE, 11, 'bold'), padx=10)
+        self.lb_dica_email = self._lbl(bts, '', 8, SUAVE)
+        self.lb_dica_email.grid(row=1, column=0, sticky='w', pady=(4, 0))
 
         # Resultado
         self.res = tk.Frame(self, bg=CARD); self.res.pack(fill='both', expand=True, padx=28, pady=(0, 10))
-        self.lb_status = self._lbl(self.res, 'Escolha o mês e clique em Gerar SINTEGRA.', 12, SUAVE, 'bold')
+        self.lb_status = self._lbl(self.res, 'Escolha o mês e clique em um dos botões acima.', 12, SUAVE, 'bold')
         self.lb_status.pack(anchor='w', padx=18, pady=(16, 2))
         self.lb_arquivo = self._lbl(self.res, '', 9, SUAVE, wraplength=660, justify='left')
         self.lb_arquivo.pack(anchor='w', padx=18)
@@ -206,10 +216,7 @@ class App(tk.Tk):
         self.bt_pasta.pack(side='left')
         self.bt_rel = Botao(acoes, 'Abrir relatório Excel', self.abrir_relatorio, cor=CARD2, hover=LINHA)
         self.bt_rel.pack(side='left', padx=10)
-        self.bt_enviar = Botao(acoes, '✉  Enviar para a contabilidade', self.enviar_contabilidade,
-                               cor=VERDE, hover='#45D486')
-        self.bt_enviar.pack(side='right')
-        self.bt_pasta.habilitar(False); self.bt_rel.habilitar(False); self.bt_enviar.habilitar(False)
+        self.bt_pasta.habilitar(False); self.bt_rel.habilitar(False)
 
         self._lbl(self, f'Aliber Informática  ·  versão {VERSAO}', 8, SUAVE).pack(side='bottom', pady=(0, 10))
 
@@ -240,6 +247,14 @@ class App(tk.Tk):
             self.lb_razao.config(text='Banco do PDV+ não encontrado', fg=VERMELHO_HOVER)
             self.lb_docs.config(text='Abra as Configurações e indique onde está o banco (arquivo .db).')
         self._mostrar_auto()
+        self._botoes(True)
+
+    def _botoes(self, ativo):
+        """Liga/desliga os dois botoes de gerar (o de enviar so com os e-mails configurados)."""
+        email = self._email_configurado()
+        self.bt_gerar_salvar.habilitar(ativo)
+        self.bt_gerar_enviar.habilitar(ativo and email)
+        self.lb_dica_email.config(text='' if email else 'Para enviar, configure os e-mails em ⚙ Configurações.')
 
     def _mostrar_auto(self):
         est = automatico.carregar_estado()
@@ -333,14 +348,6 @@ class App(tk.Tk):
                   'Área de Trabalho e enviado à contabilidade com os XMLs de entrada e saída e o relatório Excel.',
                   8, SUAVE, wraplength=380, justify='left').pack(anchor='w')
 
-        var_ger = tk.BooleanVar(value=bool(self.cfg.get('enviar_ao_gerar', True)))
-        tk.Checkbutton(col_d, text='Enviar à contabilidade ao clicar em “Gerar SINTEGRA”', variable=var_ger, bg=BG,
-                       fg=TXT, selectcolor=CARD2, activebackground=BG, activeforeground=TXT, font=(FONTE, 10, 'bold'),
-                       highlightthickness=0, bd=0).pack(anchor='w', pady=(14, 0))
-        self._lbl(col_d, 'Mês já encerrado: envia na hora, sem perguntar. Mês ainda em andamento: pergunta antes e '
-                  'envia como PARCIAL (o envio do dia 1º continua mandando o mês completo).',
-                  8, SUAVE, wraplength=380, justify='left').pack(anchor='w')
-
         def coletar():
             tel = ''.join(ch for ch in campos['telefone'].get() if ch.isdigit())
             if len(tel) < 10:
@@ -356,14 +363,13 @@ class App(tk.Tk):
                     messagebox.showwarning('E-mail', f'E-mail da contabilidade inválido: {em}', parent=j); return None
             if cliente and not envio.email_valido(cliente):
                 messagebox.showwarning('E-mail', 'E-mail do cliente inválido.', parent=j); return None
-            if (var_auto.get() or var_ger.get()) and not (contab and cliente and senha):
-                messagebox.showwarning('Envio automático', 'Para enviar à contabilidade, preencha o e-mail da '
+            if var_auto.get() and not (contab and cliente and senha):
+                messagebox.showwarning('Envio automático', 'Para o envio automático, preencha o e-mail da '
                                        'contabilidade, o e-mail do cliente e a senha de app.', parent=j); return None
             return dict(telefone=tel, contato=campos['contato'].get().strip(), banco=banco,
                         pasta=campos['pasta'].get().strip() or pasta_documentos(),
                         pasta_xml_originais=campos['pasta_xml_originais'].get().strip(),
-                        email_contabilidade='; '.join(contab), email_cliente=cliente, senha=senha, auto=var_auto.get(),
-                        enviar_ao_gerar=var_ger.get())
+                        email_contabilidade='; '.join(contab), email_cliente=cliente, senha=senha, auto=var_auto.get())
 
         def testar():
             d = coletar()
@@ -413,15 +419,17 @@ class App(tk.Tk):
         Botao(rod, 'Cancelar', j.destroy, cor=CARD2, hover=LINHA).pack(side='right', padx=8)
 
     # ---------- geracao ----------
-    def gerar(self):
+    def gerar(self, modo='salvar'):
         if not self.cfg.get('telefone') or not self.cfg.get('banco'):
             self.abrir_config(); return
+        if modo == 'enviar' and not self._email_configurado():
+            self.abrir_config(); return
+        self.modo = modo
         mm, aaaa = self.cb_mes.get().split('/')
         periodo = f'{aaaa}-{mm}'
         pasta = os.path.join(self.cfg.get('pasta') or pasta_documentos(), periodo)
         os.makedirs(pasta, exist_ok=True)
-        self.bt_gerar.habilitar(False); self.bt_pasta.habilitar(False); self.bt_rel.habilitar(False)
-        self.bt_enviar.habilitar(False)
+        self._botoes(False); self.bt_pasta.habilitar(False); self.bt_rel.habilitar(False)
         self.lb_status.config(text=f'Gerando o SINTEGRA de {mm}/{aaaa}…', fg=AZUL)
         self.lb_arquivo.config(text='Lendo o banco do PDV+ e montando SINTEGRA, XMLs e relatório Excel '
                                     '(o caixa pode continuar aberto).')
@@ -445,7 +453,7 @@ class App(tk.Tk):
             tipo, r, pasta, periodo = self.fila.get_nowait()
         except queue.Empty:
             self.after(100, self._esperar); return
-        self.bt_gerar.habilitar(True)
+        self._botoes(True)
         self.ultimo = dict(pasta=pasta, relatorio=r.get('relatorio') if isinstance(r, dict) else None,
                            r=r if isinstance(r, dict) else None)
         if tipo == 'erro':
@@ -454,11 +462,32 @@ class App(tk.Tk):
             self._avisos([('erro', r.strip().splitlines()[-1])])
             return
         self._mostrar(r, periodo)
-        if self.cfg.get('enviar_ao_gerar', True) and r.get('arquivo'):
-            if self._email_configurado():
-                self.after(300, lambda: self.enviar_contabilidade(apos_gerar=True))
-            else:
-                self.lb_status.config(text=self.lb_status.cget('text') + '  ·  não enviado (e-mail não configurado)')
+        if not r.get('arquivo'):
+            return
+        if getattr(self, 'modo', 'salvar') == 'enviar':
+            self.after(300, lambda: self.enviar_contabilidade(apos_gerar=True))
+        else:
+            self.salvar_area_de_trabalho(r)
+
+    def salvar_area_de_trabalho(self, r):
+        """Copia o pacote do mes (SINTEGRA, Excel, XMLs e conferencia) para uma pasta na Area de Trabalho."""
+        p = r['periodo']
+        try:
+            destino = os.path.join(automatico.area_de_trabalho(), f'SINTEGRA {p[5:]}-{p[:4]}')
+            os.makedirs(destino, exist_ok=True)
+            for arq in r['arquivos'].values():
+                if arq and os.path.isfile(arq):
+                    shutil.copyfile(arq, os.path.join(destino, os.path.basename(arq)))
+        except Exception as ex:
+            registrar_erro(traceback.format_exc())
+            self.lb_status.config(text='✗  Gerado, mas não consegui salvar na Área de Trabalho', fg=VERMELHO_HOVER)
+            messagebox.showerror('Área de Trabalho', f'Não consegui copiar os arquivos: {ex}', parent=self)
+            return
+        self.ultimo['pasta'] = destino
+        cor = self.lb_status.cget('fg')
+        self.lb_status.config(text=f'✓  SINTEGRA {p[5:]}/{p[:4]} salvo na Área de Trabalho', fg=cor)
+        self.lb_arquivo.config(text=f'Pasta "{os.path.basename(destino)}" na Área de Trabalho: SINTEGRA, relatório '
+                                    'Excel, XMLs de entrada e de saída')
 
     def _mostrar(self, r, periodo):
         d, v, cf = r['documentos'], r['valores'], r['conferencia']
@@ -495,7 +524,6 @@ class App(tk.Tk):
             self.lb_conf.config(text='⚠  Conferência com o banco do PDV+: há divergência (veja o relatório)', fg=AMARELO)
         self._avisos(itens or [('', 'Nenhum aviso.')])
         self.bt_pasta.habilitar(True); self.bt_rel.habilitar(bool(r['arquivos'].get('excel')))
-        self.bt_enviar.habilitar(bool(r['arquivos'].get('sintegra')))
 
     def _avisos(self, itens):
         t = self.tx_avisos
@@ -539,7 +567,7 @@ class App(tk.Tk):
                 if apos_gerar:
                     self.lb_status.config(text=self.lb_status.cget('text') + '  ·  não enviado')
                 return
-        self.bt_enviar.habilitar(False); self.bt_gerar.habilitar(False)
+        self._botoes(False)
         self.lb_status.config(text=f'Enviando o SINTEGRA {p[5:]}/{p[:4]} para a contabilidade…', fg=AZUL)
 
         def tarefa():
@@ -569,7 +597,7 @@ class App(tk.Tk):
         threading.Thread(target=tarefa, daemon=True).start()
 
     def _enviado(self, ok, msg, parcial=False):
-        self.bt_enviar.habilitar(True); self.bt_gerar.habilitar(True)
+        self._botoes(True)
         p = self.ultimo['r']['periodo']
         if ok:
             self.lb_status.config(text=f'✓  SINTEGRA {p[5:]}/{p[:4]} {"(PARCIAL) " if parcial else ""}'

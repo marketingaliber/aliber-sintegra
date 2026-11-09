@@ -1,6 +1,18 @@
-ALIBER SINTEGRA - versao 2.4
+ALIBER SINTEGRA - versao 2.5
 Gera o SINTEGRA (Convenio ICMS 57/95) direto do banco do PDV+ e envia
 automaticamente para a contabilidade todo mes.
+
+NOVIDADE DA 2.5
+- Dois botoes na tela principal:
+  "Gerar e enviar a contabilidade": gera e envia por e-mail (so fica
+  ativo com os e-mails configurados). Mes ja encerrado: envia na hora.
+  Mes em andamento: pergunta antes e envia como [PARCIAL].
+  "Gerar e salvar na Area de Trabalho": gera e copia tudo (SINTEGRA,
+  relatorio Excel, XMLs de entrada e saida) para a pasta
+  "SINTEGRA MM-AAAA" na Area de Trabalho, sem enviar e-mail.
+- Saiu a opcao "Enviar a contabilidade ao clicar em Gerar SINTEGRA"
+  das Configuracoes e o botao "Enviar para a contabilidade" do rodape:
+  agora cada botao ja diz o que faz.
 
 NOVIDADE DA 2.4
 - Configuracoes > "Escolher versao" (area do tecnico, senha da Aliber):
@@ -88,7 +100,7 @@ PARTE 3 - INSTALAR E CONFIGURAR NO CLIENTE
 
 O PRIMEIRO envio automatico acontece no PROXIMO dia 1o (ex.: ativando
 em 06/10, o primeiro sera em 01/11, com o mes de outubro). Para enviar
-um mes que ja passou, use o botao "Enviar para a contabilidade".
+um mes que ja passou, use o botao "Gerar e enviar a contabilidade".
 
 ============================================================
 TESTAR O AUTOMATICO (sem mudar a data do Windows)
