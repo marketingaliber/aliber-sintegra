@@ -1,6 +1,12 @@
-ALIBER SINTEGRA - versao 2.5.1
+ALIBER SINTEGRA - versao 2.5.2
 Gera o SINTEGRA (Convenio ICMS 57/95) direto do banco do PDV+ e envia
 automaticamente para a contabilidade todo mes.
+
+CORRECAO DA 2.5.2
+- Erro "soma do reg 61 difere das NFC-e autorizadas" por centavos:
+  quando a taxa de servico (ou desconto) e rateada entre os itens, a
+  soma dos itens pode ficar 1 centavo diferente do total da nota.
+  Agora vale o total da nota (o centavo vai para o item de maior valor).
 
 CORRECAO DA 2.5.1
 - Nota com item sem ICMS no XML (ex.: servico com ISS junto com

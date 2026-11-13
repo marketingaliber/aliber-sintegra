@@ -115,6 +115,15 @@ def itens(inf, avisos=None, rot=''):
             vicms=F(ic, 'n:vICMS'), vbcst=F(ic, 'n:vBCST'), vst=F(ic, 'n:vICMSST')))
     return out
 
+def ajustar_centavos(its, vnf, ajustes):
+    """Arredondamento do rateio (ex.: taxa de servico em vOutro): a soma dos itens pode diferir do vNF em
+    alguns centavos. O total oficial e o vNF: a diferenca vai para o item de maior valor (campo vOutro)."""
+    if not its: return
+    dif = round(vnf - sum(total_item(i) for i in its), 2)
+    if dif and abs(dif) <= 0.10:
+        max(its, key=total_item)['voutro'] += dif
+        ajustes.append(dif)
+
 def total_item(i):
     return i['vprod'] - i['vdesc'] + i['vfrete'] + i['vseg'] + i['voutro'] + i['vipi'] + i['vst']
 
@@ -214,6 +223,7 @@ def gerar(a):
     L50, L53, L54 = [], [], []
     prod = collections.defaultdict(list)
     nfce_ok, nfce_canc, nfce_items = [], [], []
+    ajustes = []  # diferencas de centavos (rateio) entre a soma dos itens e o vNF
     resumo = collections.Counter(); valores = collections.Counter()
 
     def data_doc(d, tipo):
@@ -250,6 +260,7 @@ def gerar(a):
         # --- NFC-e -> registros 61/61R
         if d['mod'] == '65':
             if cancelada: nfce_canc.append((dt, num, ser)); resumo['NFC-e cancelada'] += 1; continue
+            ajustar_centavos(its, vnf, ajustes)
             nfce_ok.append(dict(dt=dt, num=num, ser=ser, its=its)); resumo['NFC-e autorizada'] += 1; valores['NFC-e'] += vnf
             for i in its: nfce_items.append(i); prod[i['cod']].append(i)
             continue
@@ -263,6 +274,7 @@ def gerar(a):
             L50.append((dt, num, base + '0000P' + nm(0, 13) * 5 + nm(0, 4) + 'S'))
             resumo['NF-e cancelada'] += 1; continue
         for i in its: i['cf'] = cfop_entrada(i['cfop'], custom_cfop, avisos) if tipo == 'E' else i['cfop']
+        ajustar_centavos(its, vnf, ajustes)
         if abs(sum(total_item(i) for i in its) - vnf) > 0.02:
             avisos.add(f'{rot}: soma dos itens {sum(total_item(i) for i in its):.2f} difere do vNF {vnf:.2f}.')
         if tipo == 'E' and any(i['vipi'] for i in its): avisos.add(f'{rot}: tem IPI; registro 51 (IPI) nao e gerado por este script.')
@@ -280,6 +292,9 @@ def gerar(a):
             prod[i['cod']].append(i)
         resumo[f"NF-e {'entrada' if tipo=='E' else 'saida'}"] += 1; valores[f"NF-e {'entrada' if tipo=='E' else 'saida'}"] += vnf
 
+    if ajustes:
+        info.append(f'{len(ajustes)} nota(s) com diferenca de centavos entre a soma dos itens e o total (rateio de taxa '
+                    f'de servico/desconto); usado o total da nota (diferenca total R$ {sum(ajustes):.2f}).')
     # ---- registro 61: por dia e aliquota; faixa de numeracao do dia inclui as canceladas (valor zero)
     L61 = []
     dias = collections.defaultdict(list)

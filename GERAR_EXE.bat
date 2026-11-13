@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 echo ============================================
-echo   Aliber SINTEGRA 2.5.1 - gerando o programa .exe
+echo   Aliber SINTEGRA 2.5.2 - gerando o programa .exe
 echo ============================================
 echo.
 py --version >nul 2>&1
