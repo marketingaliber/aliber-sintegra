@@ -8,7 +8,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !define APP      "Aliber SINTEGRA"
-!define VERSAO   "2.5"
+!define VERSAO   "2.5.1"
 !define PYVER    "3.12.10"
 !define PYURL    "https://www.python.org/ftp/python/${PYVER}/python-${PYVER}-amd64.exe"
 !define UNKEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\AliberSintegra"
@@ -19,7 +19,7 @@ InstallDir "$LOCALAPPDATA\AliberSintegra"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 BrandingText "Aliber Informatica"
-VIProductVersion "2.5.0.0"
+VIProductVersion "2.5.1.0"
 VIAddVersionKey "ProductName" "${APP}"
 VIAddVersionKey "CompanyName" "Aliber Informatica"
 VIAddVersionKey "FileDescription" "Instalador do ${APP}"

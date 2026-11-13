@@ -6,7 +6,7 @@ from tkinter import ttk, filedialog, messagebox
 
 import motor_pdv, envio, automatico, versoes
 
-VERSAO = '2.5'
+VERSAO = '2.5.1'
 APP_DIR = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'AliberSintegra')
 CONFIG = os.path.join(APP_DIR, 'config.json')
 

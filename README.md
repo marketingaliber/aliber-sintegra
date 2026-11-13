@@ -3,11 +3,11 @@
 Gera o arquivo SINTEGRA (Convênio ICMS 57/95) direto do banco do PDV+ e envia para a contabilidade
 o SINTEGRA, os XMLs de entrada e saída e um relatório Excel de entradas e saídas.
 
-Versão atual: **2.5**
+Versão atual: **2.5.1**
 
 ## Download
 
-**[Baixar Instalar-AliberSintegra-2.5.exe](https://github.com/marketingaliber/aliber-sintegra/raw/main/versoes/Instalar-AliberSintegra-2.5.exe)**
+**[Baixar Instalar-AliberSintegra-2.5.1.exe](https://github.com/marketingaliber/aliber-sintegra/raw/main/versoes/Instalar-AliberSintegra-2.5.1.exe)**
 
 Na primeira instalação é preciso internet (o instalador baixa o Python oficial do python.org). Versões
 anteriores ficam na pasta `versoes/`.
@@ -48,6 +48,7 @@ Instruções de uso completas em `LEIA-ME.txt`.
 
 ## Histórico
 
+- **2.5.1**: nota com item sem ICMS (ex.: serviço com ISS) travava a geração; agora entra sem ICMS (CST 090) com aviso.
 - **2.5**: dois botões, "Gerar e enviar à contabilidade" e "Gerar e salvar na Área de Trabalho".
 - **2.4**: Configurações > Escolher versão, com senha do técnico.
 - **2.3**: registro 11 com endereço sem número (ex.: rodovia) saía com número 00000 e complemento vazio e era

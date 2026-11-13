@@ -1,6 +1,11 @@
-ALIBER SINTEGRA - versao 2.5
+ALIBER SINTEGRA - versao 2.5.1
 Gera o SINTEGRA (Convenio ICMS 57/95) direto do banco do PDV+ e envia
 automaticamente para a contabilidade todo mes.
+
+CORRECAO DA 2.5.1
+- Nota com item sem ICMS no XML (ex.: servico com ISS junto com
+  mercadoria) travava a geracao. Agora o item entra sem ICMS (CST 090)
+  e aparece um aviso dizendo qual nota e item.
 
 NOVIDADE DA 2.5
 - Dois botoes na tela principal:

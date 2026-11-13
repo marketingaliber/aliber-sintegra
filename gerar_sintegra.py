@@ -92,13 +92,21 @@ def materializar(origem, tmp):
             os.makedirs(os.path.dirname(novo), exist_ok=True); shutil.move(p, novo)
     return sorted(os.path.join(r, f) for r, _, fs in os.walk(base) for f in fs if f.lower().endswith('.xml'))
 
-def itens(inf):
+def itens(inf, avisos=None, rot=''):
     out = []
     for d in inf.findall('n:det', NS):
         p = d.find('n:prod', NS); imp = d.find('n:imposto', NS)
-        ic = imp.find('n:ICMS', NS)[0]
+        grp = imp.find('n:ICMS', NS) if imp is not None else None
+        ic = grp[0] if grp is not None and len(grp) else None
+        if ic is None:
+            # item sem grupo de ICMS (ex.: servico tributado pelo ISSQN em nota conjugada): sem ICMS, CST 090 (outras)
+            if avisos is not None:
+                iss = imp is not None and imp.find('n:ISSQN', NS) is not None
+                avisos.add(f'{rot}: item {d.get("nItem")} ({T(p, "n:xProd", "")[:40]}) sem ICMS no XML'
+                           f'{" (servico com ISSQN)" if iss else ""}; lancado sem ICMS, CST 090.')
         cst = T(ic, 'n:CST'); csosn = T(ic, 'n:CSOSN')
-        ipi = imp.find('n:IPI/n:IPITrib', NS)
+        if ic is None: cst = '90'
+        ipi = imp.find('n:IPI/n:IPITrib', NS) if imp is not None else None
         out.append(dict(n=int(d.get('nItem')), cod=T(p, 'n:cProd'), desc=T(p, 'n:xProd'), ncm=T(p, 'n:NCM'),
             un=T(p, 'n:uCom'), ean=[T(p, 'n:cEAN'), T(p, 'n:cEANTrib')], cfop=T(p, 'n:CFOP'),
             q=F(p, 'n:qCom'), vprod=F(p, 'n:vProd'), vdesc=F(p, 'n:vDesc'), vfrete=F(p, 'n:vFrete'),
@@ -232,7 +240,7 @@ def gerar(a):
         if tipo == 'E' and d['mod'] == '65': avisos.add(f'{rot}: NFC-e como entrada nao e tratada; ignorada.'); continue
         if tipo == 'E' and cancelada: avisos.add(f'{rot}: entrada cancelada; ignorada.'); continue
 
-        its = itens(inf)
+        its = itens(inf, avisos, rot)
         if tipo == 'E' and pdv:
             for i in its:
                 pid = pdv.item.get((chave, str(i['n'])))
